@@ -1,0 +1,11 @@
+apiVersion: provision.mydomain.com/v1
+kind: ProvisionRequest
+metadata:
+    name: pr-for-company-xyz
+    labels:
+        company: xyz
+spec:
+    ingressEntrance: /xyz/
+    businessDbVolume: SMALL
+    businessDbCpuLimit: 500m
+    namespaceName: companyxyz

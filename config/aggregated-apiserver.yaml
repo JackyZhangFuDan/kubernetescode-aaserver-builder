@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetescode-aapiserver-builder-service-apiserver
+  namespace: kubernetescode-aapiserver-builder
+  labels:
+    api: kubernetescode-aapiserver-builder-service
+    apiserver: "true"
+spec:
+  selector:
+    matchLabels:
+      api: kubernetescode-aapiserver-builder-service
+      apiserver: "true"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        api: kubernetescode-aapiserver-builder-service
+        apiserver: "true"
+    spec:
+      serviceAccount: aapiserver
+      containers:
+      - name: apiserver
+        image: jackyzhangfd/kubernetescode-aaserver-builder:1.0
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: apiserver-certs
+          mountPath: /apiserver.local.config/certificates
+          readOnly: true
+        command:
+        - "./apiserver"
+        args:
+        - "--etcd-servers=http://etcd-svc:2379"
+        - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
+        - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"
+        - "--audit-log-path=-"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 20Mi
+          limits:
+            cpu: 100m
+            memory: 30Mi
+      volumes:
+      - name: apiserver-certs
+        secret:
+          secretName: kubernetescode-aapiserver-builder-service
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: kubernetescode-aapiserver-builder-service
+  namespace: kubernetescode-aapiserver-builder
+  labels:
+    api: kubernetescode-aapiserver-builder-service
+    apiserver: "true"
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVKekNDQXcrZ0F3SUJBZ0lJRDZtWWQvbGE3b013RFFZSktvWklodmNOQVFFTEJRQXdnWWt4Q3pBSkJnTlYKQkFZVEFuVnVNUXN3Q1FZRFZRUUlEQUp6ZERFS01BZ0dBMVVFQnd3QmJERUtNQWdHQTFVRUNnd0JiekVMTUFrRwpBMVVFQ3d3Q2IzVXhTREJHQmdOVkJBTU1QMnQxWW1WeWJtVjBaWE5qYjJSbExXRmhjR2x6WlhKMlpYSXRZblZwCmJHUmxjaTF6WlhKMmFXTmxMV05sY25ScFptbGpZWFJsTFdGMWRHaHZjbWwwZVRBZUZ3MHlNekV4TURZeE16VTAKTWpkYUZ3MHpNekV4TURNeE16VTBNamRhTUZveFdEQldCZ05WQkFNVFQydDFZbVZ5Ym1WMFpYTmpiMlJsTFdGaApjR2x6WlhKMlpYSXRZblZwYkdSbGNpMXpaWEoyYVdObExtdDFZbVZ5Ym1WMFpYTmpiMlJsTFdGaGNHbHpaWEoyClpYSXRZblZwYkdSbGNpNXpkbU13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRQ3AKOVcvL3NxblAzRklFQlk5dUlZY2VVdXRDaFpJZnZiTTZ2M3RxU2dXdU01Z2d0LzZDZytoZkl3a0IvVGZLQTFCcQpyb1NxSThiRFE1R1hSV1YvNEVyY0R5b1hib05xMGlUZ0dISWhjR29xbWg5d0VudE5PVzdLZTRPRC92d3hzUDNXCm1Qa0trVTZHb3Y3emZHNVQ1UDhpck40clpqenF4YnFDT3BKbUxQckVYNkEzWjlLRGpMY0kvVGp3MnkySzUwWjMKNjl1dmhHT3V2bVpqT3M0MVJlbEhEUUZsbVI5V2N4VWowU0ZuaWtVektsS1Z6MDk3K1lHbjR2MlZWZ1REOWIzTgo4VG54QmxFRUJhOThUaFNUQVlYK0xmWVRPczhNbEtBaDJJajRpdm5GNFduVTBDa3JsYm1mTlQwWEZyZTl1b1hCCkVtTnltcnZFejAzdjFwUWxRV0pmQWdNQkFBR2pnY0F3Z2Iwd0RnWURWUjBQQVFIL0JBUURBZ1dnTUIwR0ExVWQKSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFmQmdOVkhTTUVHREFXZ0JRSnNpOC9weVJqSEFwQQoydDdYQmdvZWhTbHgrekJyQmdOVkhSRUVaREJpZ2dsc2IyTmhiR2h2YzNTQ1QydDFZbVZ5Ym1WMFpYTmpiMlJsCkxXRmhjR2x6WlhKMlpYSXRZblZwYkdSbGNpMXpaWEoyYVdObExtdDFZbVZ5Ym1WMFpYTmpiMlJsTFdGaGNHbHoKWlhKMlpYSXRZblZwYkdSbGNpNXpkbU9IQkg4QUFBRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBTFQ0ZC8wZgpIRGxPQkFpR1JObDhWdnhYSVo1U2lxWmVJSGlxUFlHYVEvVXYrOSs2VzFodjZkSGFJWmtOK2doWDFpQ3p0TFJvCjVtQ2tzY1hDS0dzVFV0RzR3NGxVdGNGVy9ucXZFdUs3N1ZsRVc2dkRsU1llaUdObVFMUlFRTGR1b3BLQTB5Z3kKc1RWNU02UjYvdlIzVjRYeHJtalU3ZXhiazlPM0VwN3dQZUdIL3R3dTJtU0FvSW9ybHIwNzN2WEhwdjJsQ1NhKwo2MCswaXdHdG03dno1aVJoMlA1MlJGNlZTaEQvbUVES3FiSTlyNnhYb1o1NWRDRWozTG81VHA4SEtEUmtNWkpoCmhNZFpZZmEwYUdxMS9aMVZmem1ESHJNNHdtS1doODRDY3BBV1ptRVVIMG9OUTBSbkozQzY2bTVpYmduY0EzKysKK1BqZVlueURES21SNzhzPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBcWZWdi83S3B6OXhTQkFXUGJpR0hIbExyUW9XU0g3MnpPcjk3YWtvRnJqT1lJTGYrCmdvUG9YeU1KQWYwM3lnTlFhcTZFcWlQR3cwT1JsMFZsZitCSzNBOHFGMjZEYXRJazRCaHlJWEJxS3BvZmNCSjcKVFRsdXludURnLzc4TWJEOTFwajVDcEZPaHFMKzgzeHVVK1QvSXF6ZUsyWTg2c1c2Z2pxU1ppejZ4RitnTjJmUwpnNHkzQ1AwNDhOc3RpdWRHZCt2YnI0UmpycjVtWXpyT05VWHBSdzBCWlprZlZuTVZJOUVoWjRwRk15cFNsYzlQCmUvbUJwK0w5bFZZRXcvVzl6ZkU1OFFaUkJBV3ZmRTRVa3dHRi9pMzJFenJQREpTZ0lkaUkrSXI1eGVGcDFOQXAKSzVXNW56VTlGeGEzdmJxRndSSmpjcHE3eE05Tjc5YVVKVUZpWHdJREFRQUJBb0lCQUJPSWJiTEphZExGMDNjNgozRjBmNVZPSzNCYnRHdm9pNXpKZFIyWFQxQXROU3JLWDh0dzFKTU9xVnlLdlkzWUlJM25mVE1meERLcnNYUk14Cm1wU3p4bWE4SjI1QitVQ1Jua05UQytyajdJK3czdVFXZTYxSWFIOUU2cnlFMVo4d1pEd0JvTDJpTFpBenMzRncKWDQyc3g5WElZRkJFazhPM3JkUEJ2NG1XcWN0ZnNodGYvdnNNaXo5UVVxT2gvT0preUNrQzd5UUdUMUcySmNhOApEaFNYV05ITlhCeU1KdzY5RWs2NFNMM29wYWpJNnkwVkUzT1ZEK256NDRhdldlS1hvZml4aFRmLzdqR1BSME1ZCjhYRERZZFhXQ3ZSbEdaUmV2NzlFcU9aM2dvM1VGcEpVcWkzcFVZNVZ1Yk9WbHRRZ0FCNkpvUlBTc2VCelpKK0oKMjg3Z2F1RUNnWUVBeGdLbHVXWlg4NVJScGl1SVBJaU1WcFI2ZzhUMWx3UlpVV2FNUHFvRFlROVpaVUhDa1JHRApHZ2dtTHJ5Z09KaUgzTUs4bHFtR0NVdXMvdWROK1hQeklMK1pzVlo4eUxxcEM4VUFLYTJSRHM0TVFkQlNnSmJxCmt4c1ZYVlV6YTRIekRMR3lHQWs2RjYwNExIZG10RzZ3SllhWWhLdldFNTVURzZDZC9PM2ZwU01DZ1lFQTI3dXcKTlVuemJZbkI4SEd4QU9jYm9jcFNlaE51TVdmLzh6MmE5S3ZYRk1FVGh5TnIySW1XNVZ6V1ZkYkhxdkRnbDV2ZQpGd1BycTRNWnFwSytNOEswQTJyeGdQQkk0VWtLT1ZIZ1VpbW83dzZ3K05XOE1NV1g5eEhDd2NLWTZoL1FUZmJTCm1IVERQMEZHRWhNaXo3bGxVZ0RGdnNjdkRPdTF6ZUJWdFBjUmQ1VUNnWUJneXNLQUVvdER3bWozTmFodkRzQ3IKUWdGeGtFSU5CRTgwLzAvbkFleU04WmZkYTN2VXRoN0VCdC9EVU9seFFQNkk1NWlRZldYTC9YWWZWS3BGR216cQp3VDQ3OWU4aG9EMHFSNjZBc1J1TGhTVnd0b2pkMnVmbjZRRlVrbVdFVkEyZlV1MmYya0xQZUJsUmd6eHRUdjVFCkdidE1mME15YTk1c1R1TnIxRXZTeVFLQmdRRFBkL1NWTENEYkFTSUwyOTBMaENxejVXdGdkaTRxR2c4eDVLNEYKYktia29yVEVlUzVmd3ZHbDJMVkxVVU12Wk1ZNmYrSC9peVVleU9jWUJmdnV0Vnp3aVM1RDF4eUpFa1RFQUVtMAphajlta0ZHS2NZeUI1RjlxMmVzd3RZTmFNL1dqVjNSYW5JeXBrZ0VPR2VGWmpxeGE4LzNCOXlHMnFtdjdXbUN5ClFFSE96UUtCZ0JaTVFPYVRLSzZlQm10U21lN2ZkV2hkMk1uK1pKbVVMd1IvRHorbHlXY2tzQVBwOEdURFdzcFIKZnYvMWIyaU5kV2pJUUhtU3F2UTk3eWJyMXhOMUs0RUgxaHNUUTVNaDdsSnhGc0Z3Sk5NYUN5QWpWeEtjYWhPSgpMS0g3OEVFYVFycnZkSUx5Zkh1NzJsTHRTcHB6UnhyR3hsQ1ExWmFBSXI5Y0J3b1FpOW1mCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetescode-aapiserver-builder-service
+  namespace: kubernetescode-aapiserver-builder
+  labels:
+    api: kubernetescode-aapiserver-builder-service
+    apiserver: "true"
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    api: kubernetescode-aapiserver-builder-service
+    apiserver: "true"
